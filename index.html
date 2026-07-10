@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>TOP-Etch-a-Sketch-TOP</title>
+        <meta charset="UTF-8">
+        <meta name="description" content="TOP project that is able to sketch and draw">
+        <meta name="author" content="Aaron, Sampsamp101">
+        <meta name="keywords" content="HTML, Javascript">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+
+    <body>
+        <div class = "BodyHeader">  
+            Resolution: 
+            <div class = "widthsection">width: 
+                <span class="width"> 
+                    <span id = "widthOutput"></span>
+                    <input type = "text" id = "widthInput" placeholder = "Enter Something ...">  
+                    <button id = "captureWidth"></button> 
+                </span> 
+            </div>
+
+            <div class = "heightsection">height: 
+                <span class="height"> 
+                    <span id = "heightOutput"></span>
+                    <input type = "text" id = "heightInput" placeholder = "Enter Something ..."> 
+                    <button id = "captureHeight"></button> 
+                </span>
+            </div>
+
+            <div id = "menu">
+                <button id = "createBox"></button> 
+                <button id = "reset"></button>
+                <button id = "save"></button>
+                <button id = "load"></button>
+            </div>
+        
+        </div>
+        <div class ="container"></div>
+        <script>
+                let width = 0;
+                let height = 0;
+                let drawnCells = new Set();
+                
+
+                const bodyHeaderStart = document.querySelector(".BodyHeader");
+                bodyHeaderStart.style.backgroundColor = "grey";
+                bodyHeaderStart.style.display = "flex";
+                bodyHeaderStart.style.flexDirection = "column";
+                bodyHeaderStart.style.justifyContent = "space-between";
+                bodyHeaderStart.style.alignItems = "center";
+                bodyHeaderStart.style.padding = "20px";
+                bodyHeaderStart.style.margin = "1px";
+                bodyHeaderStart.style.border = "2px solid black";
+                bodyHeaderStart.style.borderRadius = "50px";
+
+                const widthSectionBody = document.querySelector(".widthsection");
+                widthSectionBody.style.display = "flex";
+                widthSectionBody.style.flexDirection = "row";
+                widthSectionBody.style.justifyContent = "space-between";
+                widthSectionBody.style.alignItems = "center";
+                widthSectionBody.style.padding = "10px";
+                widthSectionBody.style.backgroundColor = "orange";
+                widthSectionBody.style.borderRadius = "10px";
+                widthSectionBody.style.margin = "5px";
+        
+                const heightSectionBody = document.querySelector(".heightsection");
+                heightSectionBody.style.display = "flex";
+                heightSectionBody.style.flexDirection = "row";
+                heightSectionBody.style.justifyContent = "space-between";
+                heightSectionBody.style.alignItems = "center";
+                heightSectionBody.style.padding = "10px";
+                heightSectionBody.style.backgroundColor = "orange";
+                heightSectionBody.style.borderRadius = "10px";
+                heightSectionBody.style.margin = "10px";
+
+                const widthOutputValue = document.getElementById("widthOutput");
+                const inputWidthvalue = document.getElementById("widthInput");
+                const buttonWidth = document.getElementById("captureWidth");
+                buttonWidth.textContent = "Set Width";
+
+                buttonWidth.addEventListener(("click"), () => {
+                    if (inputWidthvalue.value < 1 || inputWidthvalue.value > 100){  
+                        widthOutputValue.textContent = "Invalid! please input between 1 and 100!";
+                        inputWidthvalue.focus();
+                        if (inputWidthvalue.value < 1){
+                            alert('please input positive number');
+                            throw new Error("Please Input positive Number");
+                        }
+                        else{
+                            alert("please input less than 100.");
+                            throw new Error("Please input less than 100.");
+                        }
+                        return;
+                    }
+                    width = inputWidthvalue.value;
+                    widthOutputValue.textContent = inputWidthvalue.value;
+                    inputWidthvalue.value = "";
+                    inputHeightvalue.focus();
+                });
+
+                const heightOutputValue = document.getElementById("heightOutput");
+                const inputHeightvalue = document.getElementById("heightInput");
+                const buttonHeight = document.getElementById("captureHeight");
+                buttonHeight.textContent = "Set Height";
+                buttonHeight.addEventListener(("click"), ()=>{
+                    if (inputHeightvalue.value < 1 || inputHeightvalue.value > 100){  
+                        heightOutputValue.textContent = "Invalid! please input between 1 and 100!";
+                        inputHeightvalue.focus();
+                         if (inputHeightvalue.value < 1){
+                            alert('please input positive number');
+                            throw new Error("Please Input positive Number");
+                        }
+                        else{
+                            alert("please input less than 100.");
+                            throw new Error("Please input less than 100.");
+                        }
+                        return;
+                    }
+                    height = inputHeightvalue.value;
+                    heightOutputValue.textContent = inputHeightvalue.value;
+                    inputHeightvalue.value = "";
+                });
+                
+                const menucontainer = document.getElementById("menu");
+                menucontainer.style.padding = "15px";
+                menucontainer.style.backgroundColor = "lightblue"; 
+                menucontainer.style.border = "2px solid lightblue";
+                menucontainer.style.borderRadius = "10px"; 
+                menucontainer.style.margin = "10px";              
+
+                const boxcreate = document.getElementById("createBox");
+                boxcreate.textContent = "Create Grid";
+   
+                boxcreate.addEventListener(("click"), ()=>{
+                    if ((width>= 1 && width <= 100) && (height >= 1 && height <= 100)){  
+                        createGrid(width, height);
+                    }
+                    else{
+                        alert('Ensure both width and height has valid values!')
+                        throw new Error("Please check width and height values");
+                    }
+                    return;
+                });
+                
+               
+
+                const boxreset = document.getElementById("reset");
+                boxreset.textContent = "Reset";
+                
+                boxreset.addEventListener(("click"), ()=>{
+                    createGrid(width, height);
+                });
+
+                const boxsave = document.getElementById("save");
+                boxsave.textContent = "Save";
+
+                boxsave.addEventListener(("click"), () =>{
+                    const coordsArray = Array.from(drawnCells).map(str => {
+                        const[i,j] = str.split(',').map(Number);
+                        return {i, j};
+                    });
+                    localStorage.setItem('coordinates', JSON.stringify(coordsArray));
+                    localStorage.setItem('gridSize', JSON.stringify({width, height}));
+                    alert('drawing Saved');
+                });
+
+                function saveCoordinates(i, j){
+                    const coordinatessaved = JSON.parse(localStorage.getItem('coordinates') || '[]');
+                    const savedSize = JSON.parse(localStorage.getItem('gridSize') || []);
+
+
+                    if (!savedSize){
+                        alert ('No saved drawing, doc');
+                        return;
+                    }
+
+                    const exists = saved.some(coord => coord.i == i && coord.j == j);
+                    if (!exists){
+                        saved.push({i, j});
+                        localStorage.setItem('coordinates', JSON.stringify(saved));
+                    }
+                }
+
+
+                const boxload = document.getElementById("load");
+                boxload.textContent = "Load";
+             
+                // LOAD button: reads from localStorage and repaints the grid
+                boxload.addEventListener("click", () => {
+                    const savedSize = JSON.parse(localStorage.getItem('gridSize'));
+                    const savedCoords = JSON.parse(localStorage.getItem('coordinates') || '[]');
+
+                    if (!savedSize) {
+                        alert('No saved drawing found.');
+                        return;
+                    }
+
+                    width = savedSize.width;
+                    height = savedSize.height;
+                    createGrid(width, height); // rebuild grid at saved size
+
+                    drawnCells.clear();
+                    const boxes = document.querySelectorAll('.box');
+                    savedCoords.forEach(({ i, j }) => {
+                        const index = i * width + j;
+                        if (boxes[index]) {
+                            boxes[index].style.backgroundColor = 'green';
+                        }
+                        drawnCells.add(`${i},${j}`);
+                    });
+                });
+
+
+                let isDrawing = false;
+
+                document.addEventListener(("mousedown"), ()=>{
+                    isDrawing = true;
+                });
+
+                document.addEventListener(("mouseup"), ()=>{
+                    isDrawing = false;
+                })
+                
+         
+                function markCell(i ,j){
+                    drawnCells.add(`${i}, ${j}`);
+                }
+
+                const containergrid = document.querySelector(".container");
+                function createGrid(width, height) {
+
+                    const containerSize = 1080; // total px width, stays constant
+                    const squareSize = containerSize / width;
+                    const coords = [];
+
+                    containergrid.innerHTML = "";
+                    containergrid.style.display = "flex";
+                    containergrid.style.flexWrap = "wrap";
+                    containergrid.style.width = containerSize + "px";
+                    
+                    for (let i = 0; i < height; i++) {
+                        coords[i] = [];
+                        for (let j = 0; j < width; j++) {
+                            const square = document.createElement('div');
+                            square.setAttribute('class', 'box');
+                            square.style.width = squareSize + 'px';
+                            square.style.height = squareSize + 'px';
+                            square.style.border = '1px solid #ccc';
+                            square.style.boxSizing = 'border-box';
+                            square.style.backgroundColor = "yellow";
+                            
+                            square.addEventListener(("mouseover"), ()=>{
+                                if(isDrawing){
+                                    square.style.backgroundColor = "green";
+                                    markCell(i, j);
+                                }
+                            });
+
+                            square.addEventListener(("mousedown"), ()=> {
+                                square.style.backgroundColor = "green";
+                                markCell(i, j);
+                            });
+                           
+                            
+                            containergrid.append(square);
+                        }
+                    }
+                }
+
+            
+        </script>
+
+    </body>
+
+
+
+</html>
+
+
+
+
+
+
